@@ -5,7 +5,7 @@ from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 
-from database import database
+from database import ContDateBase
 from models import users
 
 # Secret key to encode and decode JWT tokens
@@ -27,7 +27,7 @@ def get_password_hash(password):
 
 async def get_user(username: str):
     query = users.select().where(users.c.username == username)
-    return await database.fetch_one(query)
+    return await ContDateBase.get_database().fetch_one(query)
 
 
 async def authenticate_user(username: str, password: str):

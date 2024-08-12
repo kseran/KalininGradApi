@@ -4,29 +4,34 @@ from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 
 from auth import authenticate_user, create_access_token, get_current_user, get_password_hash
-from database import database, engine
-from models import metadata, users
+from database import ContDateBase
+from models import users
 from schemas import User, UserCreate
+from databases import Database
 
 ACCESS_TOKEN_EXPIRE_MINUTES = 10
 
 
-app = FastAPI()
-metadata.create_all(bind=engine)
+app: FastAPI = FastAPI()
+ContDateBase.get_metadata().create_all(bind=ContDateBase.get_engine())
+database: Database = ContDateBase.get_database()
 
 
 @app.on_event("startup")
 async def startup():
+    """при запуске приложения подключаем бд"""
     await database.connect()
 
 
 @app.on_event("shutdown")
 async def shutdown():
+    """при выключении приложения отключаем бд"""
     await database.disconnect()
 
 
 @app.post("/users/", response_model=User)
 async def create_user(user: UserCreate):
+    """добавляем нового пользователя в бд"""
     hashed_password = get_password_hash(user.password)
     query = users.insert().values(username=user.username, hashed_password=hashed_password)
     last_record_id = await database.execute(query)
@@ -35,6 +40,7 @@ async def create_user(user: UserCreate):
 
 @app.post("/token", response_model=dict)
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
+    """Создаём токен для авторизации пользователя """
     user = await authenticate_user(form_data.username, form_data.password)
     if not user:
         raise HTTPException(
@@ -51,6 +57,7 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
 
 @app.get("/users/me/", response_model=User)
 async def read_users_me(current_user: User = Depends(get_current_user)):
+    """возвращаем пользователю информацию о нём из бд"""
     return current_user
 
 
