@@ -6,7 +6,7 @@ from databases import Database
 class ContDateBase:
     def __init__(self):
         """класс управления бд"""
-        self._DATABASE_URL: str = "sqlite:///./test.db"
+        self._DATABASE_URL: str = "postgresql://username:password@localhost:5432/databasename"
         self._engine: create_engine = create_engine(self._DATABASE_URL)
         self._metadata: MetaData = MetaData()
         self._database: Database = Database(self._DATABASE_URL)
